@@ -1,4 +1,3 @@
-
 function PrintPlugin() {}
 PrintPlugin.prototype.print = function(printHTML, success, fail, options) {
     if (typeof printHTML != 'string'){
@@ -6,14 +5,14 @@ PrintPlugin.prototype.print = function(printHTML, success, fail, options) {
         return;
     }
   
-	return PhoneGap.exec(success, fail, "PrintAppScanner", "print", [printHTML, (options&&options.appid||"")]);
+	return PhoneGap.exec(success, fail, "PrintPlugin", "print", [printHTML, (options&&options.appid||"")]);
 };
 
 /*
  * Callback function returns {available: true/false}
  */
 PrintPlugin.prototype.isPrintingAvailable = function(callback) {
-    return PhoneGap.exec(callback, null, "PrintAppScanner", "scan");
+    return PhoneGap.exec(callback, null, "PrintPlugin", "scan");
 };
 
 PhoneGap.addPlugin("printPlugin", new PrintPlugin());
