@@ -1,4 +1,3 @@
-
 window.print = function() {
 	var printManager = Windows.Graphics.Printing.PrintManager.getForCurrentView();
 	function onPrintTaskRequested(printEvent) {
