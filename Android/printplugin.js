@@ -5,30 +5,23 @@ PrintPlugin.prototype.print = function(printHTML, success, fail, options) {
         return;
     }
   
-	return PhoneGap.exec(success, fail, "PrintPlugin", "print", [printHTML, (options&&options.appid||"")]);
+	return (PhoneGap || cordova || Cordova).exec(success, fail, "PrintPlugin", "print", [printHTML, (options&&options.appid||"")]);
 };
 
 /*
  * Callback function returns {available: true/false}
  */
 PrintPlugin.prototype.isPrintingAvailable = function(callback) {
-    return PhoneGap.exec(callback, null, "PrintPlugin", "scan");
+    return (PhoneGap || cordova || Cordova).exec(callback, null, "PrintPlugin", "scan");
 };
 
-PhoneGap.addPlugin("printPlugin", new PrintPlugin());
+(PhoneGap || cordova || Cordova).addPlugin("printPlugin", new PrintPlugin());
 
 
 
 
   window.print = function() {
-		var htmlTag = document.body.parentNode
-		if (!features.platform.android) {
-			var scriptTags = htmlTag.getElementsByTagName('script');
-			for(var i = scriptTags.length - 1; i >= 0; i--)
-			{
-				scriptTags[i].parentNode.removeChild(scriptTags[i]);
-			}
-		}
+		var htmlTag = document.body.parentNode;
 		var docHtml = htmlTag.innerHTML;
 		var win = window.parent || window;
 		var left = win.getWindowWidth() / 2;
