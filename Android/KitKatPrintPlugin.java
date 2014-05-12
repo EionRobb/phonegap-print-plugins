@@ -38,6 +38,7 @@ public class KitKatPrintPlugin extends Plugin {
 			WebView wv = new WebView(ctx);
 			wv.setVisibility(View.INVISIBLE);
 			wv.getSettings().setJavaScriptEnabled(false);
+			wv.getSettings().setDatabaseEnabled(true);
 			wv.setWebViewClient(new WebViewClient() {
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
                     return false;
