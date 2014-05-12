@@ -199,6 +199,7 @@ public class PrintPlugn extends Plugin {
 						WebView wv = new WebView(ctx);
 						wv.setVisibility(View.INVISIBLE);
 						wv.getSettings().setJavaScriptEnabled(false);
+						wv.getSettings().setDatabaseEnabled(true);
 						
 						wv.setPictureListener(new WebView.PictureListener() {
 							@Deprecated
