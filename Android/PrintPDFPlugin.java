@@ -83,134 +83,135 @@ public class PrintPDFPlugin extends Plugin {
 	
 	public void print(final String htmlData) throws RemoteException, IOException {
 		
-			final PhonegapActivity ctx = this.ctx;
-			final PrintPDFPlugin self = this;
-			Runnable runnable = new Runnable() {
-				public void run() {
-					WebView wv = new WebView(ctx);
-					wv.setVisibility(View.INVISIBLE);
-					wv.getSettings().setJavaScriptEnabled(false);
-					wv.getSettings().setDatabaseEnabled(true);
-					
-					
-					// default
-					int xDpi = 300;
-					int yDpi = 300;
-					int paperWidth = 2481;
-					int paperHeight = 3507;
-					
-					wv.setMinimumWidth(paperWidth);
-					wv.setInitialScale(xDpi / 72 * 100);
-					
-					wv.setWebViewClient(new WebViewClient() {
-						public boolean shouldOverrideUrlLoading(WebView view, String url) {
-							return false;
+		final PhonegapActivity ctx = this.ctx;
+		final PrintPDFPlugin self = this;
+		Runnable runnable = new Runnable() {
+			public void run() {
+				WebView wv = new WebView(ctx);
+				wv.setVisibility(View.INVISIBLE);
+				wv.getSettings().setJavaScriptEnabled(false);
+				wv.getSettings().setDatabaseEnabled(true);
+				
+				
+				// default
+				int xDpi = 300;
+				int yDpi = 300;
+				int paperWidth = 2481;
+				int paperHeight = 3507;
+				
+				wv.setMinimumWidth(paperWidth);
+				wv.setInitialScale(xDpi / 72 * 100);
+				
+				wv.setWebViewClient(new WebViewClient() {
+					public boolean shouldOverrideUrlLoading(WebView view, String url) {
+						return false;
+					}
+					public void onPageFinished(final WebView webview, String url) {
+						
+						final PrintDocumentAdapter pda = webview.createPrintDocumentAdapter();
+						PrintManager printManager = (PrintManager) ctx.getSystemService(Context.PRINT_SERVICE);
+						PrintAttributes attributes = null;
+						
+						File dir = Environment.getExternalStorageDirectory();
+						final ParcelFileDescriptor fileDescriptor;
+						final File f;
+						try {
+							f = File.createTempFile("OpmetrixPrint", ".pdf", dir);
+							Log.d(TAG, "Created temp print file at " + f.getAbsolutePath());
+							fileDescriptor = ParcelFileDescriptor.open(f, (ParcelFileDescriptor.MODE_CREATE | ParcelFileDescriptor.MODE_READ_WRITE));
+						} catch (Exception e) {
+							e.printStackTrace();
+							return;
 						}
-						public void onPageFinished(final WebView webview, String url) {
-							
-							final PrintDocumentAdapter pda = webview.createPrintDocumentAdapter();
-							PrintManager printManager = (PrintManager) ctx.getSystemService(Context.PRINT_SERVICE);
-							PrintAttributes attributes = null;
-							
-							File dir = Environment.getExternalStorageDirectory();
-							final ParcelFileDescriptor fileDescriptor;
-							final File f;
-							try {
-								f = File.createTempFile("OpmetrixPrint", ".pdf", dir);
-								Log.d(TAG, "Created temp print file at " + f.getAbsolutePath());
-								fileDescriptor = ParcelFileDescriptor.open(f, (ParcelFileDescriptor.MODE_CREATE | ParcelFileDescriptor.MODE_READ_WRITE));
-							} catch (Exception e) {
-								e.printStackTrace();
-								return;
-							}
-							self.lastPrintedFile = f;
-							
-							PrintAttributes.Builder builder = new PrintAttributes.Builder();
-							//builder.setColorMode(PrintAttributes.COLOR_MODE_COLOR);
-							//builder.setColorMode(PrintAttributes.COLOR_MODE_MONOCHROME);
-							builder.setMediaSize(PrintAttributes.MediaSize.ISO_A4);
-							//builder.setMediaSize(PrintAttributes.MediaSize.ISO_A4.asLandscape());
-							//builder.setMinMargins(new PrintAttributes.Margins(394, 394, 394, 394)); //10mm margin
-							builder.setMinMargins(PrintAttributes.Margins.NO_MARGINS);
-							builder.setResolution(new PrintAttributes.Resolution("300x300", "300x300", 300, 300));
-							attributes = builder.build();
-							
-							// Hack the PrintDocumentAdapter to save as a PDF
-							pda.onStart();
-							pda.onLayout(null, attributes, new CancellationSignal(), new android.print.LayoutResultCallbackWrapper() {
-								@Override
-								public void onLayoutFinished(PrintDocumentInfo info, boolean changed) {
-									try {
-										pda.onWrite(new PageRange[] {PageRange.ALL_PAGES}, fileDescriptor, new CancellationSignal(), new android.print.WriteResultCallbackWrapper() {
-											@Override
-											public void onWriteFinished(PageRange[] pages) {
-												try {
-													fileDescriptor.close();
-													
-													int totalPageCount = 0;
-													if (pages != null && pages.length > 0) {
-														// Not supposed to be empty, but hey
-														for(int i = 0; i < pages.length; i++) {
-															totalPageCount += pages[i].getEnd() - pages[i].getStart() + 1;
-														}
-													}
-													self.lastTotalPageCount = totalPageCount;
-													Log.d(TAG, "Total pages to print: " + totalPageCount);
-													
-													String title = webview.getTitle();
-													if (title.isEmpty())
-														title = "Print Document";
-													
-													//send intent to open pdf
-													final Intent intent = new Intent( Intent.ACTION_SEND );
-													intent.setDataAndType(Uri.fromFile(f), "application/pdf");
-													intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-													self.ctx.startActivity(Intent.createChooser(intent, "Print using..."));
-													
-													f.deleteOnExit();
-													pda.onFinish();
-													
-													ViewGroup vg = (ViewGroup)(webview.getParent());
-													if (vg != null)
-														vg.removeView(webview);
-													
-													if (self.lastCallbackId != null) {
-														self.success(new PluginResult(PluginResult.Status.OK, ""), self.lastCallbackId);
-														self.lastCallbackId = null;
-													}
-												} catch (Exception e) {
-													e.printStackTrace();
-													if (self.lastCallbackId != null) {
-														self.error(new PluginResult(PluginResult.Status.ERROR, e.getMessage()), self.lastCallbackId);
-														self.lastCallbackId = null;
+						self.lastPrintedFile = f;
+						
+						PrintAttributes.Builder builder = new PrintAttributes.Builder();
+						//builder.setColorMode(PrintAttributes.COLOR_MODE_COLOR);
+						//builder.setColorMode(PrintAttributes.COLOR_MODE_MONOCHROME);
+						builder.setMediaSize(PrintAttributes.MediaSize.ISO_A4);
+						//builder.setMediaSize(PrintAttributes.MediaSize.ISO_A4.asLandscape());
+						//builder.setMinMargins(new PrintAttributes.Margins(394, 394, 394, 394)); //10mm margin
+						builder.setMinMargins(PrintAttributes.Margins.NO_MARGINS);
+						builder.setResolution(new PrintAttributes.Resolution("300x300", "300x300", 300, 300));
+						attributes = builder.build();
+						
+						// Hack the PrintDocumentAdapter to save as a PDF
+						pda.onStart();
+						pda.onLayout(null, attributes, new CancellationSignal(), new android.print.LayoutResultCallbackWrapper() {
+							@Override
+							public void onLayoutFinished(PrintDocumentInfo info, boolean changed) {
+								try {
+									pda.onWrite(new PageRange[] {PageRange.ALL_PAGES}, fileDescriptor, new CancellationSignal(), new android.print.WriteResultCallbackWrapper() {
+										@Override
+										public void onWriteFinished(PageRange[] pages) {
+											try {
+												fileDescriptor.close();
+												
+												int totalPageCount = 0;
+												if (pages != null && pages.length > 0) {
+													// Not supposed to be empty, but hey
+													for(int i = 0; i < pages.length; i++) {
+														totalPageCount += pages[i].getEnd() - pages[i].getStart() + 1;
 													}
 												}
+												self.lastTotalPageCount = totalPageCount;
+												Log.d(TAG, "Total pages to print: " + totalPageCount);
+												
+												String title = webview.getTitle();
+												if (title.isEmpty())
+													title = "Print Document";
+												
+												//send intent to open pdf
+												final Intent intent = new Intent( Intent.ACTION_SEND );
+												intent.setType("application/pdf");
+												intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
+												intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+												self.ctx.startActivity(Intent.createChooser(intent, "Print using..."));
+												
+												f.deleteOnExit();
+												pda.onFinish();
+												
+												ViewGroup vg = (ViewGroup)(webview.getParent());
+												if (vg != null)
+													vg.removeView(webview);
+												
+												if (self.lastCallbackId != null) {
+													self.success(new PluginResult(PluginResult.Status.OK, ""), self.lastCallbackId);
+													self.lastCallbackId = null;
+												}
+											} catch (Exception e) {
+												e.printStackTrace();
+												if (self.lastCallbackId != null) {
+													self.error(new PluginResult(PluginResult.Status.ERROR, e.getMessage()), self.lastCallbackId);
+													self.lastCallbackId = null;
+												}
 											}
-										});
-									} catch (Exception e) {
-										e.printStackTrace();
-										if (self.lastCallbackId != null) {
-											self.error(new PluginResult(PluginResult.Status.ERROR, e.getMessage()), self.lastCallbackId);
-											self.lastCallbackId = null;
 										}
+									});
+								} catch (Exception e) {
+									e.printStackTrace();
+									if (self.lastCallbackId != null) {
+										self.error(new PluginResult(PluginResult.Status.ERROR, e.getMessage()), self.lastCallbackId);
+										self.lastCallbackId = null;
 									}
 								}
-							}, null);
-							
-						}
-					});
-					
-					//Set base URI to the assets/www folder
-					String baseURL = self.webView.getUrl();
-					baseURL = baseURL.substring(0, baseURL.lastIndexOf('/') + 1);
-					
-					//Set content of WebView to htmlData
-					ctx.addContentView(wv, new ViewGroup.LayoutParams(paperWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
-					
-					wv.loadDataWithBaseURL(baseURL, htmlData, "text/html", "UTF-8", null);
-				}
-			};
-			this.ctx.runOnUiThread(runnable);
+							}
+						}, null);
+						
+					}
+				});
+				
+				//Set base URI to the assets/www folder
+				String baseURL = self.webView.getUrl();
+				baseURL = baseURL.substring(0, baseURL.lastIndexOf('/') + 1);
+				
+				//Set content of WebView to htmlData
+				ctx.addContentView(wv, new ViewGroup.LayoutParams(paperWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
+				
+				wv.loadDataWithBaseURL(baseURL, htmlData, "text/html", "UTF-8", null);
+			}
+		};
+		this.ctx.runOnUiThread(runnable);
 		
 	}
 }
